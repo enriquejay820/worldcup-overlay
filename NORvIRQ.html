@@ -1,137 +1,156 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body {
+body {
     margin: 0;
     background: transparent;
-    font-family: Arial, sans-serif;
-  }
+    font-family: Arial, Helvetica, sans-serif;
+}
 
-  .scoreboard {
+.scoreboard {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: fit-content;
-    background: rgba(0,0,0,.82);
-    border: 2px solid rgba(255,255,255,.25);
-    border-radius: 14px;
-    padding: 8px 12px;
-    color: white;
-  }
 
-  .team {
+    width: fit-content;
+
+    background: rgba(0,0,0,.85);
+
+    border: 2px solid rgba(255,255,255,.25);
+
+    border-radius: 14px;
+
+    padding: 8px 12px;
+
+    color: white;
+}
+
+.team {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
+
     font-size: 22px;
     font-weight: 900;
     white-space: nowrap;
-  }
+}
 
-  .flag {
+.flag {
     width: 34px;
     height: 24px;
     object-fit: cover;
     border-radius: 3px;
-  }
+}
 
-  .score {
+.score {
     font-size: 30px;
     font-weight: 900;
+
     background: white;
     color: #111;
+
     padding: 4px 13px;
     border-radius: 9px;
+
     min-width: 76px;
     text-align: center;
-  }
+}
 </style>
 </head>
 
 <body>
-  <div class="scoreboard">
-    <div class="team" id="home">
-      <img class="flag" src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Flag_of_Iraq.svg">
-      IRQ
+
+<div class="scoreboard">
+
+    <div class="team">
+        <img
+            class="flag"
+            src="https://upload.wikimedia.org/wikipedia/commons/f/f6/Flag_of_Iraq.svg"
+        >
+        IRQ
     </div>
 
-    <div class="score" id="score">0 - 0</div>
-
-    <div class="team" id="away">
-      NOR
-      <img class="flag" src="https://upload.wikimedia.org/wikipedia/commons/d/d9/Flag_of_Norway.svg">
+    <div class="score" id="score">
+        0 - 0
     </div>
-  </div>
+
+    <div class="team">
+        NOR
+        <img
+            class="flag"
+            src="https://upload.wikimedia.org/wikipedia/commons/d/d9/Flag_of_Norway.svg"
+        >
+    </div>
+
+</div>
 
 <script>
 const API_KEY = "123";
-const MATCH_DATE = "2026-06-16";
-const HOME_NAME = "Iraq";
-const AWAY_NAME = "Norway";
+const EVENT_ID = "2461107";
 
 const params = new URLSearchParams(window.location.search);
 
-function setText(id, value) {
-  document.getElementById(id).textContent = value;
+function setScore(home, away) {
+    document.getElementById("score").textContent =
+        `${home} - ${away}`;
 }
 
 function applyManualOverride() {
-  const hs = params.get("homeScore");
-  const as = params.get("awayScore");
+    const homeScore = params.get("homeScore");
+    const awayScore = params.get("awayScore");
 
-  if (hs !== null && as !== null) {
-    setText("score", `${hs} - ${as}`);
-  }
-}
-
-async function updateFromTheSportsDB() {
-  applyManualOverride();
-
-  try {
-    const url =
-      `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventsday.php?d=${MATCH_DATE}&s=Soccer`;
-
-    const res = await fetch(url + `&cacheBust=${Date.now()}`);
-    const data = await res.json();
-    const events = data.events || [];
-
-    const match = events.find(e => {
-      const home = (e.strHomeTeam || "").toLowerCase();
-      const away = (e.strAwayTeam || "").toLowerCase();
-
-      return (
-        home.includes(HOME_NAME.toLowerCase()) &&
-        away.includes(AWAY_NAME.toLowerCase())
-      ) || (
-        home.includes(AWAY_NAME.toLowerCase()) &&
-        away.includes(HOME_NAME.toLowerCase())
-      );
-    });
-
-    if (!match) return;
-
-    const homeScore = match.intHomeScore;
-    const awayScore = match.intAwayScore;
-
-    if (
-      homeScore !== null &&
-      homeScore !== undefined &&
-      awayScore !== null &&
-      awayScore !== undefined
-    ) {
-      setText("score", `${homeScore} - ${awayScore}`);
+    if (homeScore !== null && awayScore !== null) {
+        setScore(homeScore, awayScore);
+        return true;
     }
 
-  } catch (err) {
-    // Keep last score if API fails
-  }
+    return false;
 }
 
-updateFromTheSportsDB();
-setInterval(updateFromTheSportsDB, 30000);
+async function updateScore() {
+
+    const manualMode = applyManualOverride();
+
+    if (manualMode) return;
+
+    try {
+
+        const response = await fetch(
+            `https://www.thesportsdb.com/api/v1/json/${API_KEY}/lookupevent.php?id=${EVENT_ID}&_=${Date.now()}`
+        );
+
+        const data = await response.json();
+
+        if (!data.events || !data.events.length)
+            return;
+
+        const match = data.events[0];
+
+        const home = match.intHomeScore;
+        const away = match.intAwayScore;
+
+        if (
+            home !== null &&
+            home !== undefined &&
+            away !== null &&
+            away !== undefined
+        ) {
+            setScore(home, away);
+        }
+
+    } catch (e) {
+        console.log("Score update failed", e);
+    }
+}
+
+updateScore();
+setInterval(updateScore, 10000);
 </script>
+
 </body>
 </html>
