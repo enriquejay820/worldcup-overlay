@@ -13,19 +13,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     width: fit-content;
     background: rgba(0,0,0,.82);
     border: 2px solid rgba(255,255,255,.25);
     border-radius: 14px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     color: white;
   }
 
   .team {
-    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 22px;
     font-weight: 900;
     white-space: nowrap;
+  }
+
+  .flag {
+    width: 34px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 3px;
   }
 
   .score {
@@ -43,16 +53,24 @@
 
 <body>
   <div class="scoreboard">
-    <div class="team" id="home">🇫🇷 FRA</div>
+    <div class="team" id="home">
+      <img class="flag" src="https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg">
+      BRA
+    </div>
+
     <div class="score" id="score">0 - 0</div>
-    <div class="team" id="away">SEN 🇸🇳</div>
+
+    <div class="team" id="away">
+      HAI
+      <img class="flag" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Flag_of_Haiti.svg">
+    </div>
   </div>
 
 <script>
 const API_KEY = "123";
-const MATCH_DATE = "2026-06-16";
-const HOME_NAME = "France";
-const AWAY_NAME = "Senegal";
+const MATCH_DATE = "2026-06-19";
+const HOME_NAME = "Brazil";
+const AWAY_NAME = "Haiti";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -108,7 +126,7 @@ async function updateFromTheSportsDB() {
     }
 
   } catch (err) {
-    // Silently keep last score if API fails
+    // Keep last score if API fails
   }
 }
 
