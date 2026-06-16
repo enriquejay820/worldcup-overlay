@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  body {
+    margin: 0;
+    background: transparent;
+    font-family: Arial, sans-serif;
+  }
+
+  .scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: fit-content;
+    background: rgba(0,0,0,.82);
+    border: 2px solid rgba(255,255,255,.25);
+    border-radius: 14px;
+    padding: 8px 14px;
+    color: white;
+  }
+
+  .team {
+    font-size: 24px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .score {
+    font-size: 30px;
+    font-weight: 900;
+    background: white;
+    color: #111;
+    padding: 4px 13px;
+    border-radius: 9px;
+    min-width: 76px;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+  <div class="scoreboard">
+    <div class="team" id="home">🇫🇷 FRA</div>
+    <div class="score" id="score">0 - 0</div>
+    <div class="team" id="away">SEN 🇸🇳</div>
+  </div>
+
+<script>
+const API_KEY = "123";
+const MATCH_DATE = "2026-06-16";
+const HOME_NAME = "France";
+const AWAY_NAME = "Senegal";
+
+const params = new URLSearchParams(window.location.search);
+
+function setText(id, value) {
+  document.getElementById(id).textContent = value;
+}
+
+function applyManualOverride() {
+  const hs = params.get("homeScore");
+  const as = params.get("awayScore");
+
+  if (hs !== null && as !== null) {
+    setText("score", `${hs} - ${as}`);
+  }
+}
+
+async function updateFromTheSportsDB() {
+  applyManualOverride();
+
+  try {
+    const url =
+      `https://www.thesportsdb.com/api/v1/json/${API_KEY}/eventsday.php?d=${MATCH_DATE}&s=Soccer`;
+
+    const res = await fetch(url + `&cacheBust=${Date.now()}`);
+    const data = await res.json();
+    const events = data.events || [];
+
+    const match = events.find(e => {
+      const home = (e.strHomeTeam || "").toLowerCase();
+      const away = (e.strAwayTeam || "").toLowerCase();
+
+      return (
+        home.includes(HOME_NAME.toLowerCase()) &&
+        away.includes(AWAY_NAME.toLowerCase())
+      ) || (
+        home.includes(AWAY_NAME.toLowerCase()) &&
+        away.includes(HOME_NAME.toLowerCase())
+      );
+    });
+
+    if (!match) return;
+
+    const homeScore = match.intHomeScore;
+    const awayScore = match.intAwayScore;
+
+    if (
+      homeScore !== null &&
+      homeScore !== undefined &&
+      awayScore !== null &&
+      awayScore !== undefined
+    ) {
+      setText("score", `${homeScore} - ${awayScore}`);
+    }
+
+  } catch (err) {
+    // Silently keep last score if API fails
+  }
+}
+
+updateFromTheSportsDB();
+setInterval(updateFromTheSportsDB, 30000);
+</script>
+</body>
+</html>
